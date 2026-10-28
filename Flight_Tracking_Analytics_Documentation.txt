@@ -1,0 +1,155 @@
+FLIGHT TRACKING ANALYTICS
+
+Project Overview
+
+Flight Tracking Analytics is an end-to-end data analytics project that
+collects aircraft state data from the OpenSky Network API, processes the
+data with Python, stores the cleaned dataset in Amazon S3, loads it into
+Snowflake, and presents SQL-driven insights through a Flask-powered web
+dashboard.
+
+The project demonstrates a practical data pipeline involving API data
+extraction, data cleaning, cloud storage, data warehousing, SQL
+analysis, backend API development, and dashboard visualization.
+
+Technology Stack
+
+-   Python
+-   OpenSky Network API
+-   Requests
+-   Pandas
+-   Matplotlib and Seaborn (data exploration/visualization, where used)
+-   AWS S3
+-   AWS IAM
+-   Boto3
+-   Snowflake
+-   SQL
+-   Flask
+-   HTML
+-   CSS
+-   JavaScript
+-   Chart.js
+-   python-dotenv
+
+Pipeline Architecture
+
+1.  Data Extraction Aircraft state data is retrieved from the OpenSky
+    Network API using Python requests and API authentication.
+
+2.  Data Cleaning and Transformation Pandas is used to inspect the
+    dataset, handle missing values, remove the fully null sensors
+    column, convert epoch timestamps to UTC datetime values, and prepare
+    the cleaned dataset for loading.
+
+3.  Cloud Storage The cleaned CSV dataset is uploaded to an Amazon S3
+    bucket using Boto3. AWS IAM credentials are configured locally and
+    should never be committed to the public repository.
+
+4.  Data Warehousing Snowflake is configured with a database, schema,
+    external stage, and target table. Data is loaded from the S3 stage
+    into the FLIGHT_TRACKING table using COPY INTO.
+
+5.  SQL Analytics SQL queries are used to analyze aircraft activity,
+    including:
+
+    -   Total aircraft records
+    -   Airborne versus grounded aircraft
+    -   Aircraft counts by origin country
+    -   Fastest aircraft
+    -   Average velocity by country
+    -   Average barometric altitude by country
+    -   Grounded and airborne aircraft by country
+    -   Countries with the highest grounded aircraft counts
+    -   Missing callsign counts by country
+    -   Ground percentage by country
+
+6.  Backend and Dashboard A Flask application connects to Snowflake and
+    exposes API endpoints for dashboard data. The dashboard uses HTML,
+    CSS, JavaScript, and Chart.js to display key performance indicators
+    and analytical charts.
+
+Running the Application Locally
+
+1.  Install Python and ensure it is available from your terminal.
+
+2.  Open the project directory in a terminal.
+
+3.  Create and activate a virtual environment (recommended).
+
+4.  Install dependencies:
+
+    pip install -r requirements.txt
+
+5.  Create a local .env file using .env.example as a template.
+
+6.  Add your own Snowflake connection values to the local .env file.
+
+7.  Start the Flask application:
+
+    python app.py
+
+8.  Open the dashboard in your browser:
+
+    http://127.0.0.1:5000/dashboard
+
+The dashboard is available only while the Flask application is running
+locally, unless the application is separately deployed to a hosting
+service.
+
+Environment Variables
+
+The application expects the following Snowflake settings in the local
+.env file:
+
+SNOWFLAKE_ACCOUNT SNOWFLAKE_USER SNOWFLAKE_PASSWORD SNOWFLAKE_WAREHOUSE
+SNOWFLAKE_DATABASE SNOWFLAKE_SCHEMA
+
+Never upload .env files, passwords, access keys, secret keys, tokens, or
+other credentials to GitHub. Keep .env excluded through .gitignore. The
+.env.example file should contain placeholder values only.
+
+Important Notes
+
+-   The dashboard displays results from the data currently stored in
+    Snowflake. It is not a continuously streaming live-flight tracking
+    system.
+-   API responses and aircraft availability can vary over time.
+-   AWS and Snowflake resources may incur charges depending on usage and
+    account configuration. Review and shut down resources when they are
+    not needed.
+-   Follow the OpenSky Network terms of use and attribution requirements
+    when using its data.
+-   Do not publish raw datasets unless you have checked their size,
+    source terms, and suitability for redistribution.
+
+Repository Contents
+
+The repository is expected to contain the application source code,
+templates, dependency list, environment-variable example, Git ignore
+rules, documentation, and optional dashboard screenshots.
+
+Typical structure:
+
+Flight-Tracking-Analytics/ app.py templates/ index.html requirements.txt
+.env.example .gitignore README.md screenshots/
+
+Project Learning Outcomes
+
+This project provides practical experience with: - Consuming data from a
+REST API - Working with JSON-like API responses and Pandas DataFrames -
+Data quality checks and cleaning - Uploading files to Amazon S3 with
+Boto3 - Understanding AWS IAM access - Creating Snowflake stages and
+loading data with COPY INTO - Writing analytical SQL queries -
+Connecting Python applications to Snowflake - Building Flask API
+endpoints - Creating interactive charts with Chart.js
+
+Author
+
+Chandan Nama 
+LinkedIn: in/chandan-nama-b1b05a2b8
+
+Disclaimer
+
+This project is intended for educational and portfolio demonstration
+purposes. It is not an air traffic control system and should not be used
+for operational aviation decisions.
