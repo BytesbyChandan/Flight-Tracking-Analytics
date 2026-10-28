@@ -1,0 +1,335 @@
+create database flight_tracking_db;
+select current_database();
+use flight_tracking_db;
+create schema flight_analytics;
+use schema flight_analytics;
+
+create or replace file format flight_csv_format
+type = 'csv'
+skip_header = 1
+field_optionally_enclosed_by = '"'
+null_if=('NULL', 'null', '');
+
+create or replace stage flight_s3_stage
+url = 's3://flight-tracking-analytics-project-2026/'
+credentials = (
+    AWS_Key_Id = AWS_key
+    AWS_Secret_Key = AWS KEY Secret 
+)
+file_format = flight_csv_format;
+
+desc stage flight_s3_stage;
+list @flight_s3_stage;
+
+CREATE OR REPLACE TABLE FLIGHT_TRACKING (
+    ICAO24 VARCHAR(20),
+    CALLSIGN VARCHAR(20),
+    ORIGIN_COUNTRY VARCHAR(100),
+    TIME_POSITION TIMESTAMP_TZ,
+    LAST_CONTACT TIMESTAMP_TZ,
+    LONGITUDE FLOAT,
+    LATITUDE FLOAT,
+    BARO_ALTITUDE FLOAT,
+    ON_GROUND BOOLEAN,
+    VELOCITY FLOAT,
+    TRUE_TRACK FLOAT,
+    VERTICAL_RATE FLOAT,
+    GEO_ALTITUDE FLOAT,
+    SQUAWK VARCHAR(10),
+    SPI BOOLEAN
+);
+
+copy into flight_tracking
+from @flight_s3_stage
+file_format = (format_name = 'flight_csv_format')
+on_error = 'abort_statement';
+
+
+Select count(*) from flight_tracking;
+Select * from flight_tracking limit 10;
+
+-- Which country have the highest number of aircraft currently flying
+Select 
+    origin_country,
+    count(*) as Total_Aircraft
+from flight_tracking
+where on_ground=False
+group by origin_country
+order by Total_Aircraft DESC
+limit 10;
+
+-- Which country have the highest average aircraft speed.
+Select 
+     origin_country,
+     round(avg(velocity),2) as Average_speed
+from flight_tracking
+where on_ground=False
+group by origin_country
+order by Average_speed DESC
+limit 10;
+
+-- Which country have the highest number of aircraft currently on the ground.
+Select 
+     origin_country,
+     count(*) as Total_number
+from flight_tracking
+where on_ground=True
+group by origin_country
+order by Total_number DESC
+limit 10;
+
+-- Which country have the highest average aircraft altitude.
+Select 
+    origin_country,
+    round(avg(baro_altitude),2) as Avg_altitude
+from flight_tracking
+Where baro_altitude is not null and on_ground=false
+group by origin_country
+order by Avg_altitude DESC
+limit 10;
+
+-- Which are the top 10 fastest aircraft currently flying.
+Select 
+    icao24,
+    callsign,
+    origin_country,
+    round(velocity*3.6,2) as Velocity_in_Km
+from flight_tracking
+where velocity is not null and on_ground=FALSE
+order by velocity DESC
+limit 10;
+
+-- what percentage of observed aircraft are flying vesus on the ground.
+with flight_status as(
+    select 
+        icao24,
+        on_ground
+    from flight_tracking
+),
+status_count as(
+    select 
+        case 
+            when on_ground=true then 'On Ground'
+            when on_ground=false then 'Flying'
+        end as Flight_Status,
+        count(*) as Total_aircraft
+    from flight_status
+    group by Flight_Status
+),
+status_percentage as(
+    select
+        Flight_Status,
+        Total_aircraft,
+        round(
+            (Total_aircraft*100.0/sum(Total_aircraft) over())
+            ,2) as Percentage
+    from status_count
+)
+SELECT * from status_percentage;
+
+-- Which country have more than 100 flying aircraft and what is their average aircraft speed.
+Select 
+    origin_country,
+    round(avg(velocity*3.6),2) as Avg_speed,
+    count(*) as Total_aircraft
+from flight_tracking
+where on_ground=false
+group by origin_country
+having count(*)>100
+order by Total_aircraft;
+
+-- which countries have an average aircraft speed higher than the overall average aircraft speed.
+Select 
+    origin_country,
+    round(avg(velocity*3.6),2) as Average_velocity
+from flight_tracking
+where on_ground=false
+group by origin_country
+having Average_velocity>
+(Select 
+    avg(velocity*3.6)
+from flight_tracking where on_ground=false);
+
+
+-- Which country have the highest percentage of aircraft on the ground.
+with total_aircraft as(Select 
+    origin_country,
+    count(*) as total_aircraft
+from flight_tracking
+group by origin_country
+),
+grounded_aircraft as(
+    select 
+        origin_country,
+        count(*) as Grounded_aircraft
+    from flight_tracking
+    where on_ground=true
+    group by origin_country
+)
+Select x.origin_country,round(coalesce(y.Grounded_aircraft,0)*100.0/total_aircraft,2) as Ground_percentage
+from total_aircraft as x
+left join grounded_aircraft as y
+on x.origin_country = y.origin_country
+where x.total_aircraft>=50
+order by Ground_percentage DESC;
+
+-- which countries have the highest number of observed aircraft and what percentage of all observed aircraft does each country represent.
+with total_aircraft as(select 
+    origin_country,
+    count(*) as total_aircraft
+from flight_tracking
+group by origin_country
+)
+select 
+    origin_country,
+    total_aircraft,
+    sum(total_aircraft) over() as global_total_aircraft,
+    round(total_aircraft*100.0/sum(total_aircraft) over(),2) as global_percentage
+from total_aircraft
+order by total_aircraft desc
+limit 10;
+
+
+
+Select current_account();
+select current_user();
+select current_warehouse();
+select current_database();
+select current_schema();
+select current_region();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
