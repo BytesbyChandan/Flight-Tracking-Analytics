@@ -111,13 +111,9 @@ The dashboard presents flight tracking insights through KPI cards and interactiv
 
 **Dashboard Screenshot:**
 
-Add your dashboard screenshot to the `screenshots` folder and update the path below:
+Screenshots are added as a 1,2,3.png
 
-```markdown
-![Flight Tracking Dashboard](screenshots/dashboard.png)
-```
-
-## ⚙️ Installation and Setup
+## Installation and Setup
 
 ### Prerequisites
 
@@ -176,14 +172,14 @@ http://127.0.0.1:5000/dashboard
 
 **Note:** The dashboard runs locally and requires the Flask application and Snowflake connection to be active.
 
-## 🔐 Security
+## Security
 
 - Never upload `.env` files to GitHub.
 - Never expose AWS access keys, secret keys, or Snowflake passwords.
 - Use `.env.example` with placeholder values only.
 - Keep credentials protected through appropriate environment and IAM configurations.
 
-## 📈 Learning Outcomes
+## Learning Outcomes
 
 Through this project, I gained practical experience in:
 
@@ -196,12 +192,12 @@ Through this project, I gained practical experience in:
 - Flask API development.
 - Interactive dashboard development.
 
-## 👨‍💻 Author
+## Author
 
 **Chandan Nama**
 
 - **LinkedIn:** [in/chandan-nama-b1b05a2b8](https://www.linkedin.com/in/chandan-nama-b1b05a2b8)
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 This project is developed for educational and portfolio purposes. The dashboard analyzes collected aircraft data and is not a continuously streaming air traffic control system. It should not be used for operational aviation decisions.
