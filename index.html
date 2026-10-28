@@ -1,0 +1,423 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Flight Tracking Analytics</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            padding: 25px;
+            color: #1e293b;
+        }
+
+        header {
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #64748b;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #00000010;
+        }
+
+        .card h3 {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 15px;
+        }
+
+        .card h2 {
+            font-size: 30px;
+            color: #2563eb;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .chart-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 0;
+        }
+
+        .chart-box h3 {
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        @media(max-width: 768px) {
+            .cards, .charts {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Flight Tracking Analytics</h1>
+    <p>Aircraft Monitoring Dashboard | Snowflake Analytics</p>
+    <div style="margin-top:20px;">
+    <button onclick="refreshDashboard()"
+        style="padding:12px 20px;
+        background:#2563eb;
+        color:white;
+        border:none;
+        border-radius:6px;
+        cursor:pointer;">
+        Refresh Dashboard
+    </button>
+
+    <span id="lastUpdated"
+        style="margin-left:15px;color:#64748b;">
+        Last Updated: Not yet
+    </span>
+</div>
+</header>
+
+<section class="cards">
+
+    <div class="card">
+        <h3>Total Aircraft</h3>
+        <h2 id="totalAircraft">Loading...</h2>
+    </div>
+
+    <div class="card">
+        <h3>Airborne Aircraft</h3>
+        <h2 id="airborne">Loading...</h2>
+    </div>
+
+    <div class="card">
+        <h3>Grounded Aircraft</h3>
+        <h2 id="grounded">Loading...</h2>
+    </div>
+
+    <div class="card">
+        <h3>Countries</h3>
+        <h2 id="countries">Loading...</h2>
+    </div>
+
+</section>
+
+<section class="charts">
+
+    <div class="chart-box">
+        <h3>Airborne vs Grounded</h3>
+        <div class="chart-container">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-box">
+        <h3>Top 10 Countries by Aircraft</h3>
+        <div class="chart-container">
+            <canvas id="countryChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-box">
+        <h3>Top 10 Fastest Aircraft</h3>
+        <div class="chart-container">
+            <canvas id="fastestChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-box">
+        <h3>Country-wise Average Velocity</h3>
+        <div class="chart-container">
+            <canvas id="velocityChart"></canvas>
+        </div>
+    </div>
+    
+<!-- Q6: Average Altitude -->
+    <div class="chart-box">
+        <h3>Country-wise Average Altitude</h3>
+        <div class="chart-container">
+            <canvas id="altitudeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Q7: Grounded vs Airborne -->
+    <div class="chart-box">
+        <h3>Country-wise Ground vs Airborne</h3>
+        <div class="chart-container">
+            <canvas id="countryStatusChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Q8: Grounded Countries -->
+    <div class="chart-box">
+        <h3>Top 10 Grounded Countries</h3>
+        <div class="chart-container">
+            <canvas id="groundedCountriesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Q9: Missing Callsign -->
+    <div class="chart-box">
+        <h3>Missing Callsign by Country</h3>
+        <div class="chart-container">
+            <canvas id="missingCallsignChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Q10: Ground Percentage -->
+    <div class="chart-box">
+        <h3>Country-wise Ground Percentage</h3>
+        <div class="chart-container">
+            <canvas id="groundPercentageChart"></canvas>
+        </div>
+    </div>
+
+</section>
+
+<script>
+
+async function loadDashboard() {
+
+    const response = await fetch('/api/dashboard');
+    const data = await response.json();
+
+    document.getElementById('totalAircraft').innerText =
+        data.total_aircraft.toLocaleString();
+
+    const airborne = data.ground_status.find(
+        x => x.status === 'Airborne'
+    )?.count || 0;
+
+    const grounded = data.ground_status.find(
+        x => x.status === 'Grounded'
+    )?.count || 0;
+
+    document.getElementById('airborne').innerText = airborne;
+    document.getElementById('grounded').innerText = grounded;
+
+    document.getElementById('countries').innerText =
+    data.total_countries;
+
+    // Status Chart
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Airborne', 'Grounded'],
+            datasets: [{
+                data: [airborne, grounded]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Country Chart
+    new Chart(document.getElementById('countryChart'), {
+        type: 'bar',
+        data: {
+            labels: data.top_countries.map(x => x.country),
+            datasets: [{
+                label: 'Aircraft',
+                data: data.top_countries.map(x => x.count)
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Fastest Aircraft Chart
+    new Chart(document.getElementById('fastestChart'), {
+        type: 'bar',
+        data: {
+            labels: data.fastest_aircraft.map(x => x.icao24),
+            datasets: [{
+                label: 'Velocity (m/s)',
+                data: data.fastest_aircraft.map(x => x.velocity)
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Average Velocity Chart
+    new Chart(document.getElementById('velocityChart'), {
+        type: 'bar',
+        data: {
+            labels: data.avg_velocity.map(x => x.country),
+            datasets: [{
+                label: 'Average Velocity (m/s)',
+                data: data.avg_velocity.map(x => x.velocity)
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+    
+// Q6: Average Altitude Chart
+new Chart(document.getElementById('altitudeChart'), {
+    type: 'bar',
+    data: {
+        labels: data.avg_altitude.map(x => x.country),
+        datasets: [{
+            label: 'Average Altitude (m)',
+            data: data.avg_altitude.map(x => x.altitude)
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+
+// Q7: Country-wise Ground vs Airborne
+new Chart(document.getElementById('countryStatusChart'), {
+    type: 'bar',
+    data: {
+        labels: data.country_status.map(x => x.country),
+        datasets: [
+            {
+                label: 'Grounded',
+                data: data.country_status.map(x => x.grounded),
+                stack: 'status'
+            },
+            {
+                label: 'Airborne',
+                data: data.country_status.map(x => x.airborne),
+                stack: 'status'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { stacked: true },
+            y: { stacked: true }
+        }
+    }
+});
+
+
+// Q8: Top Grounded Countries
+new Chart(document.getElementById('groundedCountriesChart'), {
+    type: 'bar',
+    data: {
+        labels: data.grounded_countries.map(x => x.country),
+        datasets: [{
+            label: 'Grounded Aircraft',
+            data: data.grounded_countries.map(x => x.count)
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+
+// Q9: Missing Callsign
+new Chart(document.getElementById('missingCallsignChart'), {
+    type: 'bar',
+    data: {
+        labels: data.missing_callsign.map(x => x.country),
+        datasets: [{
+            label: 'Missing Callsigns',
+            data: data.missing_callsign.map(x => x.count)
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+
+// Q10: Ground Percentage
+new Chart(document.getElementById('groundPercentageChart'), {
+    type: 'bar',
+    data: {
+        labels: data.ground_percentage.map(x => x.country),
+        datasets: [{
+            label: 'Ground Percentage (%)',
+            data: data.ground_percentage.map(x => x.percentage)
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                min: 0,
+                max: 100
+            }
+        }
+    }
+});
+document.getElementById('lastUpdated').innerText =
+    'Last Updated: ' + new Date().toLocaleString();
+
+}
+async function refreshDashboard() {
+
+    try {
+        await loadDashboard();
+        console.log("Dashboard refreshed successfully");
+
+    } catch (error) {
+        alert("Unable to refresh dashboard data!");
+        console.error(error);
+    }
+}
+
+loadDashboard();
+
+</script>
+
+</body>
+</html>
